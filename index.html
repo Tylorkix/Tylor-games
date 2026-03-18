@@ -9,10 +9,8 @@
             text-align: center;
             margin: 0;
             color: white;
-
             background-size: cover;
             background-position: center;
-            background-repeat: no-repeat;
             transition: background-image 1s ease-in-out;
         }
 
@@ -54,10 +52,58 @@
 
         #timer { color: red; }
 
+        /* 🚀 Pulsing Button */
+        .deploy-btn {
+            padding: 12px 20px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #6a5af9, #8b7bff);
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            animation: pulseGlow 1.5s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 10px #6a5af9; }
+            50% { box-shadow: 0 0 25px #8b7bff; }
+            100% { box-shadow: 0 0 10px #6a5af9; }
+        }
+
+        /* Leaderboard animation */
+        #leaderboardBox {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        #leaderboardBox.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .player {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #6a5af9;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .popup {
             position: fixed;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.7);
@@ -77,60 +123,6 @@
             position: fixed;
             top: 10px;
             right: 10px;
-            width: auto;
-        }
-
-        /* 🚀 BUTTON */
-        .deploy-btn {
-            padding: 12px 20px;
-            border-radius: 25px;
-            background: linear-gradient(135deg, #6a5af9, #8b7bff);
-            color: white;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            animation: pulseGlow 1.5s infinite;
-        }
-
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 10px #6a5af9; }
-            50% { box-shadow: 0 0 25px #8b7bff; }
-            100% { box-shadow: 0 0 10px #6a5af9; }
-        }
-
-        /* 🎬 LEADERBOARD ANIMATION */
-        #leaderboardBox {
-            display: none;
-            transform: translateY(20px);
-            opacity: 0;
-            transition: all 0.5s ease;
-        }
-
-        #leaderboardBox.show {
-            display: block;
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        /* 👤 PLAYER ROW */
-        .player {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 5px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: #6a5af9;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -146,7 +138,7 @@
     </div>
 </div>
 
-<button id="musicToggle" onclick="toggleMusic()" style="display:none;">🔇 Music Off</button>
+<button id="musicToggle" onclick="toggleMusic()" style="display:none;">🔇 Music</button>
 
 <!-- START -->
 <div class="box" id="startScreen">
@@ -178,42 +170,42 @@
 <audio id="bgMusic" src="https://files.catbox.moe/d2cjfw.m4a" loop></audio>
 
 <script>
-// 🖼️ IMAGES
+// 🖼️ BACKGROUND IMAGES
 const images = [
-    "https://files.catbox.moe/sca4v4.jpg",
+    "https://files.catbox.moe/md9t5u.jpg",
     "https://files.catbox.moe/ri4psa.jpg",
-    "https://files.catbox.moe/md9t5u.jpg"
+    "https://files.catbox.moe/sca4v4.jpg"
 ];
 
-function setRandomBackground() {
-    let random = images[Math.floor(Math.random() * images.length)];
-    document.body.style.backgroundImage = `url(${random})`;
+function setRandomBackground(){
+    let r = images[Math.floor(Math.random()*images.length)];
+    document.body.style.backgroundImage = `url(${r})`;
 }
 
-// MUSIC
+// 🎵 MUSIC
 let musicEnabled = false;
 
-function setMusic(choice) {
+function setMusic(choice){
     musicEnabled = choice;
-    document.getElementById("musicPopup").style.display = "none";
-    document.getElementById("musicToggle").style.display = "block";
+    document.getElementById("musicPopup").style.display="none";
+    document.getElementById("musicToggle").style.display="block";
 }
 
-function toggleMusic() {
-    musicEnabled = !musicEnabled;
-    let m = document.getElementById("bgMusic");
+function toggleMusic(){
+    let m=document.getElementById("bgMusic");
+    musicEnabled=!musicEnabled;
     musicEnabled ? m.play() : m.pause();
 }
 
-// QUIZ
-const quiz = [
+// QUIZ DATA (EDIT THIS 👇)
+const quiz=[
     {question:"Favorite color?",answers:["Red","Blue","Black"],correct:"Black"},
     {question:"Favorite food?",answers:["Pizza","Ugali","Rice"],correct:"Ugali"}
 ];
 
 let player="",score=0,current=0,timeLeft=10,timer,userAnswers=[];
 
-// START
+// START GAME
 function startGame(){
     player=document.getElementById("playerName").value;
     if(!player){alert("Enter name");return;}
@@ -240,6 +232,7 @@ function startTimer(){
     timer=setInterval(()=>{
         timeLeft--;
         document.getElementById("timer").innerText="Time: "+timeLeft;
+
         if(timeLeft===0){
             clearInterval(timer);
             userAnswers.push("No Answer");
@@ -248,7 +241,7 @@ function startTimer(){
     },1000);
 }
 
-// LOAD
+// LOAD QUESTION
 function loadQuestion(){
     clearInterval(timer);
     startTimer();
@@ -264,7 +257,7 @@ function loadQuestion(){
     document.getElementById("answers").innerHTML=html;
 }
 
-// CHECK
+// CHECK ANSWER
 function checkAnswer(ans){
     clearInterval(timer);
     userAnswers.push(ans);
@@ -282,43 +275,53 @@ function checkAnswer(ans){
 // NEXT
 function nextQuestion(){
     current++;
-    if(current<quiz.length) loadQuestion();
-    else endGame();
+    if(current<quiz.length){
+        loadQuestion();
+    }else{
+        endGame();
+    }
 }
 
-// END
+// END GAME
 function endGame(){
     bgMusic.pause();
 
-    document.getElementById("question").innerText="Game Over";
-    document.getElementById("answers").innerHTML="";
+    let resultHTML="<h3>Your Score: "+score+"</h3><h4>Correct Answers:</h4>";
+
+    quiz.forEach((q,i)=>{
+        resultHTML+=`
+        <p>
+        Q: ${q.question}<br>
+        Your Answer: ${userAnswers[i]}<br>
+        Correct Answer: ${q.correct}
+        </p>`;
+    });
+
+    document.getElementById("question").innerHTML="Game Over";
+    document.getElementById("answers").innerHTML=resultHTML;
 
     saveScore(player,score);
     showLeaderboard();
 }
 
-// SAVE
+// SAVE SCORE
 function saveScore(name,score){
     let scores=JSON.parse(localStorage.getItem("scores"))||[];
     scores.push({name,score});
     localStorage.setItem("scores",JSON.stringify(scores));
 }
 
-// SHOW
+// SHOW LEADERBOARD
 function showLeaderboard(){
     let scores=JSON.parse(localStorage.getItem("scores"))||[];
-
-    // sort highest first
     scores.sort((a,b)=>b.score-a.score);
 
     let html="";
-
     scores.forEach((s,i)=>{
-        let medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
-
+        let medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
         html+=`
         <div class="player">
-            <div class="avatar">${s.name.charAt(0).toUpperCase()}</div>
+            <div class="avatar">${s.name[0].toUpperCase()}</div>
             <div>${medal} ${i+1}. ${s.name} - ${s.score}</div>
         </div>`;
     });
@@ -326,13 +329,13 @@ function showLeaderboard(){
     document.getElementById("leaderboard").innerHTML=html;
 }
 
-// TOGGLE
+// TOGGLE LEADERBOARD
 function toggleLeaderboard(e){
     let box=document.getElementById("leaderboardBox");
 
     if(box.classList.contains("show")){
         box.classList.remove("show");
-        e.target.innerText="🚀 View Friends Results";
+        e.target.innerText="🚀 View Other Friends Results";
     }else{
         box.classList.add("show");
         e.target.innerText="❌ Hide Results";
