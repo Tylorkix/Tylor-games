@@ -9,18 +9,17 @@
             background: linear-gradient(to right, #4facfe, #00f2fe);
         }
 
-        .quiz-box {
+        .box {
             background: white;
             padding: 20px;
-            margin: 50px auto;
-            width: 400px;
+            margin: 40px auto;
+            width: 420px;
             border-radius: 15px;
             box-shadow: 0 0 10px rgba(0,0,0,0.2);
         }
 
         button {
-            display: block;
-            margin: 10px auto;
+            margin: 10px;
             padding: 10px;
             width: 80%;
             border: none;
@@ -28,29 +27,72 @@
             background-color: #4facfe;
             color: white;
             cursor: pointer;
-            font-size: 16px;
         }
 
-        button:hover {
-            background-color: #007bff;
+        input {
+            padding: 10px;
+            width: 80%;
         }
 
         #timer {
-            font-size: 20px;
             color: red;
         }
 
-        #feedback {
-            font-weight: bold;
-            margin-top: 10px;
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        #musicToggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: auto;
+            padding: 8px;
         }
     </style>
 </head>
 <body>
 
-<div class="quiz-box">
+<!-- 🎵 MUSIC POPUP -->
+<div class="popup" id="musicPopup">
+    <div class="popup-box">
+        <h2>🎵 Enable Music?</h2>
+        <button onclick="enableMusic()">Yes</button>
+        <button onclick="disableMusic()">No</button>
+    </div>
+</div>
+
+<!-- 🎛️ TOGGLE BUTTON -->
+<button id="musicToggle" onclick="toggleMusic()" style="display:none;">🔊 Music On</button>
+
+<!-- START SCREEN -->
+<div class="box" id="startScreen">
+    <h2>Enter Your Name</h2>
+    <input type="text" id="playerName" placeholder="Your name">
+    <button onclick="startGame()">Start Game</button>
+
+    <h3>🏆 Leaderboard</h3>
+    <div id="leaderboard"></div>
+</div>
+
+<!-- QUIZ -->
+<div class="box" id="quizScreen" style="display:none;">
     <h3 id="timer">Time: 10</h3>
-    <h2 id="question">Loading...</h2>
+    <h2 id="question"></h2>
     <div id="answers"></div>
     <p id="feedback"></p>
     <p id="score"></p>
@@ -60,8 +102,15 @@
 <audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
 <audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
 
+<!-- Background Music -->
+<audio id="bgMusic" src="*Uploaded successfully:*
+https://files.catbox.moe/d2cjfw.m4a" loop></audio>
+
 <script>
-// 🔥 YOUR CUSTOM QUESTIONS
+let player = "";
+let musicEnabled = false;
+
+// QUESTIONS
 const quiz = [
     {
         question: "What is my favorite color?",
@@ -77,11 +126,6 @@ const quiz = [
         question: "What do I hate the most?",
         answers: ["Noise", "Cold weather", "Waking up early", "Traffic"],
         correct: "Waking up early"
-    },
-    {
-        question: "What is my dream job?",
-        answers: ["Doctor", "Engineer", "Programmer", "Pilot"],
-        correct: "Programmer"
     }
 ];
 
@@ -89,8 +133,54 @@ let currentQuestion = 0;
 let score = 0;
 let timeLeft = 10;
 let timer;
+let userAnswers = [];
 
-// ⏱️ TIMER
+// 🎵 MUSIC CONTROL
+function enableMusic() {
+    musicEnabled = true;
+    document.getElementById("musicPopup").style.display = "none";
+    document.getElementById("musicToggle").style.display = "block";
+    document.getElementById("bgMusic").play();
+}
+
+function disableMusic() {
+    musicEnabled = false;
+    document.getElementById("musicPopup").style.display = "none";
+    document.getElementById("musicToggle").style.display = "block";
+}
+
+function toggleMusic() {
+    let music = document.getElementById("bgMusic");
+
+    if (music.paused) {
+        music.play();
+        document.getElementById("musicToggle").innerText = "🔊 Music On";
+    } else {
+        music.pause();
+        document.getElementById("musicToggle").innerText = "🔇 Music Off";
+    }
+}
+
+// START GAME
+function startGame() {
+    player = document.getElementById("playerName").value;
+
+    if (player.trim() === "") {
+        alert("Enter your name!");
+        return;
+    }
+
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("quizScreen").style.display = "block";
+
+    if (musicEnabled) {
+        document.getElementById("bgMusic").play();
+    }
+
+    loadQuestion();
+}
+
+// TIMER
 function startTimer() {
     timeLeft = 10;
     document.getElementById("timer").innerText = "Time: " + timeLeft;
@@ -101,6 +191,7 @@ function startTimer() {
 
         if (timeLeft === 0) {
             clearInterval(timer);
+            userAnswers.push("No Answer");
             showFeedback("⏰ Time's up!", "orange");
             setTimeout(nextQuestion, 1000);
         }
@@ -127,6 +218,7 @@ function loadQuestion() {
 // CHECK ANSWER
 function checkAnswer(answer) {
     clearInterval(timer);
+    userAnswers.push(answer);
 
     if (answer === quiz[currentQuestion].correct) {
         score++;
@@ -140,7 +232,7 @@ function checkAnswer(answer) {
     setTimeout(nextQuestion, 1000);
 }
 
-// FEEDBACK MESSAGE
+// FEEDBACK
 function showFeedback(message, color) {
     let fb = document.getElementById("feedback");
     fb.innerText = message;
@@ -158,28 +250,51 @@ function nextQuestion() {
     }
 }
 
+// LEADERBOARD
+function saveScore(name, percent) {
+    let scores = JSON.parse(localStorage.getItem("scores")) || [];
+    scores.push({name, percent});
+    scores.sort((a, b) => b.percent - a.percent);
+    localStorage.setItem("scores", JSON.stringify(scores));
+}
+
+function showLeaderboard() {
+    let scores = JSON.parse(localStorage.getItem("scores")) || [];
+    let html = "";
+
+    scores.slice(0,5).forEach(s => {
+        html += `<p>${s.name} - ${s.percent}%</p>`;
+    });
+
+    document.getElementById("leaderboard").innerHTML = html;
+}
+
 // END GAME
 function endGame() {
+    let percent = Math.round((score / quiz.length) * 100);
+    saveScore(player, percent);
+
     document.getElementById("question").innerText = "🎉 Game Over!";
     document.getElementById("answers").innerHTML = "";
     document.getElementById("timer").innerText = "";
-    document.getElementById("feedback").innerText = "";
 
-    document.getElementById("score").innerText =
-        "Your score: " + score + " / " + quiz.length;
+    let resultsHTML = `<h3>${player}, Score: ${score}/${quiz.length} (${percent}%)</h3><hr>`;
 
-    // Bonus message
-    if (score === quiz.length) {
-        document.getElementById("feedback").innerText = "🔥 You know me perfectly!";
-    } else if (score >= quiz.length / 2) {
-        document.getElementById("feedback").innerText = "😄 Not bad!";
-    } else {
-        document.getElementById("feedback").innerText = "😂 You don’t know me!";
-    }
+    quiz.forEach((q, i) => {
+        let userAns = userAnswers[i];
+        let correct = q.correct;
+
+        resultsHTML += `
+        <p><b>Q${i+1}:</b> ${q.question}<br>
+        Your: <span style="color:${userAns === correct ? 'green':'red'}">${userAns}</span><br>
+        Correct: <span style="color:green">${correct}</span></p><hr>`;
+    });
+
+    document.getElementById("score").innerHTML = resultsHTML;
 }
 
-// START GAME
-loadQuestion();
+// INIT
+showLeaderboard();
 </script>
 
 </body>
