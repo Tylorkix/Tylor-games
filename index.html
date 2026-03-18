@@ -10,14 +10,12 @@
             margin: 0;
             color: white;
 
-            /* Background image settings */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             transition: background-image 1s ease-in-out;
         }
 
-        /* DARK OVERLAY */
         body::after {
             content: "";
             position: fixed;
@@ -54,9 +52,7 @@
             width: 80%;
         }
 
-        #timer {
-            color: red;
-        }
+        #timer { color: red; }
 
         .popup {
             position: fixed;
@@ -82,7 +78,59 @@
             top: 10px;
             right: 10px;
             width: auto;
-            padding: 8px;
+        }
+
+        /* 🚀 BUTTON */
+        .deploy-btn {
+            padding: 12px 20px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #6a5af9, #8b7bff);
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            animation: pulseGlow 1.5s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 10px #6a5af9; }
+            50% { box-shadow: 0 0 25px #8b7bff; }
+            100% { box-shadow: 0 0 10px #6a5af9; }
+        }
+
+        /* 🎬 LEADERBOARD ANIMATION */
+        #leaderboardBox {
+            display: none;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        #leaderboardBox.show {
+            display: block;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* 👤 PLAYER ROW */
+        .player {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #6a5af9;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -98,17 +146,22 @@
     </div>
 </div>
 
-<!-- MUSIC TOGGLE -->
 <button id="musicToggle" onclick="toggleMusic()" style="display:none;">🔇 Music Off</button>
 
-<!-- START SCREEN -->
+<!-- START -->
 <div class="box" id="startScreen">
     <h2>Enter Your Name</h2>
-    <input type="text" id="playerName" placeholder="Your name">
+    <input type="text" id="playerName">
     <button onclick="startGame()">Start Game</button>
 
-    <h3>🏆 Leaderboard</h3>
-    <div id="leaderboard"></div>
+    <button class="deploy-btn" onclick="toggleLeaderboard(event)">
+        🚀 View Friends Results
+    </button>
+
+    <div id="leaderboardBox">
+        <h3>🏆 Leaderboard</h3>
+        <div id="leaderboard"></div>
+    </div>
 </div>
 
 <!-- QUIZ -->
@@ -116,218 +169,174 @@
     <h3 id="timer">Time: 10</h3>
     <h2 id="question"></h2>
     <div id="answers"></div>
-    <p id="feedback"></p>
     <p id="score"></p>
 </div>
 
-<!-- SOUND EFFECTS -->
+<!-- AUDIO -->
 <audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
 <audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
-
-<!-- BACKGROUND MUSIC -->
 <audio id="bgMusic" src="https://files.catbox.moe/d2cjfw.m4a" loop></audio>
 
 <script>
-// 🖼️ IMAGE LIST (use local folder OR URLs)
+// 🖼️ IMAGES
 const images = [
     "https://files.catbox.moe/sca4v4.jpg",
     "https://files.catbox.moe/ri4psa.jpg",
     "https://files.catbox.moe/md9t5u.jpg"
 ];
 
-// RANDOM BACKGROUND
 function setRandomBackground() {
     let random = images[Math.floor(Math.random() * images.length)];
     document.body.style.backgroundImage = `url(${random})`;
 }
 
-// MUSIC CONTROL
+// MUSIC
 let musicEnabled = false;
 
 function setMusic(choice) {
     musicEnabled = choice;
     document.getElementById("musicPopup").style.display = "none";
     document.getElementById("musicToggle").style.display = "block";
-    updateMusicButton();
 }
 
 function toggleMusic() {
     musicEnabled = !musicEnabled;
-    let music = document.getElementById("bgMusic");
-
-    if (musicEnabled) {
-        music.play().catch(()=>{});
-    } else {
-        music.pause();
-    }
-
-    updateMusicButton();
+    let m = document.getElementById("bgMusic");
+    musicEnabled ? m.play() : m.pause();
 }
 
-function updateMusicButton() {
-    document.getElementById("musicToggle").innerText =
-        musicEnabled ? "🔊 Music On" : "🔇 Music Off";
-}
-
-// QUIZ DATA
+// QUIZ
 const quiz = [
-    {
-        question: "What is my favorite color?",
-        answers: ["Red", "Blue", "Black", "Green"],
-        correct: "Black"
-    },
-    {
-        question: "What food do I love most?",
-        answers: ["Pizza", "Ugali", "Fries", "Rice"],
-        correct: "Ugali"
-    },
-    {
-        question: "What do I hate the most?",
-        answers: ["Noise", "Cold weather", "Waking up early", "Traffic"],
-        correct: "Waking up early"
-    }
+    {question:"Favorite color?",answers:["Red","Blue","Black"],correct:"Black"},
+    {question:"Favorite food?",answers:["Pizza","Ugali","Rice"],correct:"Ugali"}
 ];
 
-let player = "";
-let currentQuestion = 0;
-let score = 0;
-let timer;
-let timeLeft = 10;
-let userAnswers = [];
+let player="",score=0,current=0,timeLeft=10,timer,userAnswers=[];
 
-// START GAME
-function startGame() {
-    player = document.getElementById("playerName").value;
+// START
+function startGame(){
+    player=document.getElementById("playerName").value;
+    if(!player){alert("Enter name");return;}
 
-    if (player.trim() === "") {
-        alert("Enter your name!");
-        return;
-    }
-
-    document.getElementById("startScreen").style.display = "none";
-    document.getElementById("quizScreen").style.display = "block";
+    document.getElementById("startScreen").style.display="none";
+    document.getElementById("quizScreen").style.display="block";
 
     setRandomBackground();
 
-    if (musicEnabled) {
-        let music = document.getElementById("bgMusic");
-        music.currentTime = 0;
-        music.play().catch(()=>{});
+    if(musicEnabled){
+        let m=document.getElementById("bgMusic");
+        m.currentTime=0;
+        m.play().catch(()=>{});
     }
 
     loadQuestion();
 }
 
 // TIMER
-function startTimer() {
-    timeLeft = 10;
-    document.getElementById("timer").innerText = "Time: " + timeLeft;
+function startTimer(){
+    timeLeft=10;
+    document.getElementById("timer").innerText="Time: "+timeLeft;
 
-    timer = setInterval(() => {
+    timer=setInterval(()=>{
         timeLeft--;
-        document.getElementById("timer").innerText = "Time: " + timeLeft;
-
-        if (timeLeft === 0) {
+        document.getElementById("timer").innerText="Time: "+timeLeft;
+        if(timeLeft===0){
             clearInterval(timer);
             userAnswers.push("No Answer");
-            showFeedback("⏰ Time's up!", "orange");
-            setTimeout(nextQuestion, 1000);
+            nextQuestion();
         }
-    }, 1000);
+    },1000);
 }
 
-// LOAD QUESTION
-function loadQuestion() {
+// LOAD
+function loadQuestion(){
     clearInterval(timer);
     startTimer();
 
-    let q = quiz[currentQuestion];
-    document.getElementById("question").innerText = q.question;
-    document.getElementById("feedback").innerText = "";
+    let q=quiz[current];
+    document.getElementById("question").innerText=q.question;
 
-    let html = "";
-    q.answers.forEach(a => {
-        html += `<button onclick="checkAnswer('${a}')">${a}</button>`;
+    let html="";
+    q.answers.forEach(a=>{
+        html+=`<button onclick="checkAnswer('${a}')">${a}</button>`;
     });
 
-    document.getElementById("answers").innerHTML = html;
+    document.getElementById("answers").innerHTML=html;
 }
 
-// CHECK ANSWER
-function checkAnswer(ans) {
+// CHECK
+function checkAnswer(ans){
     clearInterval(timer);
     userAnswers.push(ans);
 
-    if (ans === quiz[currentQuestion].correct) {
+    if(ans===quiz[current].correct){
         score++;
-        document.getElementById("correctSound").play();
-        showFeedback("✅ Correct!", "green");
-    } else {
-        document.getElementById("wrongSound").play();
-        showFeedback("❌ Wrong!", "red");
+        correctSound.play();
+    }else{
+        wrongSound.play();
     }
 
-    setTimeout(nextQuestion, 1000);
+    setTimeout(nextQuestion,1000);
 }
 
-// FEEDBACK
-function showFeedback(msg, color) {
-    let fb = document.getElementById("feedback");
-    fb.innerText = msg;
-    fb.style.color = color;
+// NEXT
+function nextQuestion(){
+    current++;
+    if(current<quiz.length) loadQuestion();
+    else endGame();
 }
 
-// NEXT QUESTION
-function nextQuestion() {
-    currentQuestion++;
-    if (currentQuestion < quiz.length) {
-        loadQuestion();
-    } else {
-        endGame();
-    }
-}
+// END
+function endGame(){
+    bgMusic.pause();
 
-// END GAME
-function endGame() {
-    document.getElementById("bgMusic").pause();
+    document.getElementById("question").innerText="Game Over";
+    document.getElementById("answers").innerHTML="";
 
-    document.getElementById("question").innerText = "🎉 Game Over!";
-    document.getElementById("answers").innerHTML = "";
-    document.getElementById("timer").innerText = "";
-
-    let html = `<h3>${player}, Score: ${score}/${quiz.length}</h3><hr>`;
-
-    quiz.forEach((q, i) => {
-        html += `
-        <p>
-        <strong>${q.question}</strong><br>
-        Your Answer: ${userAnswers[i]}<br>
-        Correct Answer: ${q.correct}
-        </p><hr>`;
-    });
-
-    document.getElementById("score").innerHTML = html;
-
-    saveScore(player, score);
+    saveScore(player,score);
     showLeaderboard();
 }
 
-// LEADERBOARD
-function saveScore(name, score) {
-    let scores = JSON.parse(localStorage.getItem("scores")) || [];
-    scores.push({name, score});
-    localStorage.setItem("scores", JSON.stringify(scores));
+// SAVE
+function saveScore(name,score){
+    let scores=JSON.parse(localStorage.getItem("scores"))||[];
+    scores.push({name,score});
+    localStorage.setItem("scores",JSON.stringify(scores));
 }
 
-function showLeaderboard() {
-    let scores = JSON.parse(localStorage.getItem("scores")) || [];
-    let html = "";
+// SHOW
+function showLeaderboard(){
+    let scores=JSON.parse(localStorage.getItem("scores"))||[];
 
-    scores.slice(-5).reverse().forEach(s => {
-        html += `<p>${s.name}: ${s.score}</p>`;
+    // sort highest first
+    scores.sort((a,b)=>b.score-a.score);
+
+    let html="";
+
+    scores.forEach((s,i)=>{
+        let medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+
+        html+=`
+        <div class="player">
+            <div class="avatar">${s.name.charAt(0).toUpperCase()}</div>
+            <div>${medal} ${i+1}. ${s.name} - ${s.score}</div>
+        </div>`;
     });
 
-    document.getElementById("leaderboard").innerHTML = html;
+    document.getElementById("leaderboard").innerHTML=html;
+}
+
+// TOGGLE
+function toggleLeaderboard(e){
+    let box=document.getElementById("leaderboardBox");
+
+    if(box.classList.contains("show")){
+        box.classList.remove("show");
+        e.target.innerText="🚀 View Friends Results";
+    }else{
+        box.classList.add("show");
+        e.target.innerText="❌ Hide Results";
+    }
 }
 
 // INIT
