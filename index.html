@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>How Well Do You Know Me?</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        .quiz-box {
+            background: white;
+            padding: 20px;
+            margin: 50px auto;
+            width: 400px;
+            border-radius: 10px;
+        }
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 80%;
+            cursor: pointer;
+        }
+        #timer {
+            font-size: 20px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-box">
+    <h3 id="timer">Time: 10</h3>
+    <h2 id="question">Question here</h2>
+    <div id="answers"></div>
+    <p id="score"></p>
+</div>
+
+<!-- iPhone-like sound -->
+<audio id="sound" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
+
+<script>
+const quiz = [
+    {
+        question: "What is my favorite color?",
+        answers: ["Red", "Blue", "Green", "Black"],
+        correct: "Black"
+    },
+    {
+        question: "What is my favorite food?",
+        answers: ["Pizza", "Ugali", "Burger", "Rice"],
+        correct: "Ugali"
+    },
+    {
+        question: "Which game do I like most?",
+        answers: ["FIFA", "COD", "Minecraft", "Fortnite"],
+        correct: "FIFA"
+    }
+];
+
+let currentQuestion = 0;
+let score = 0;
+let timeLeft = 10;
+let timer;
+
+function startTimer() {
+    timeLeft = 10;
+    document.getElementById("timer").innerText = "Time: " + timeLeft;
+
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").innerText = "Time: " + timeLeft;
+
+        if (timeLeft === 0) {
+            clearInterval(timer);
+            nextQuestion();
+        }
+    }, 1000);
+}
+
+function loadQuestion() {
+    clearInterval(timer);
+    startTimer();
+
+    let q = quiz[currentQuestion];
+    document.getElementById("question").innerText = q.question;
+
+    let answersHTML = "";
+    q.answers.forEach(answer => {
+        answersHTML += `<button onclick="checkAnswer('${answer}')">${answer}</button>`;
+    });
+
+    document.getElementById("answers").innerHTML = answersHTML;
+}
+
+function checkAnswer(answer) {
+    document.getElementById("sound").play(); // play sound
+
+    clearInterval(timer);
+
+    if (answer === quiz[currentQuestion].correct) {
+        score++;
+    }
+
+    nextQuestion();
+}
+
+function nextQuestion() {
+    currentQuestion++;
+
+    if (currentQuestion < quiz.length) {
+        loadQuestion();
+    } else {
+        document.getElementById("question").innerText = "Game Over!";
+        document.getElementById("answers").innerHTML = "";
+        document.getElementById("timer").innerText = "";
+        document.getElementById("score").innerText = "Your score: " + score;
+    }
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>
