@@ -2,20 +2,40 @@
 <html>
 <head>
     <title>How Well Do You Know Me?</title>
+
     <style>
         body {
             font-family: Arial;
             text-align: center;
-            background: linear-gradient(to right, #4facfe, #00f2fe);
+            margin: 0;
+            color: white;
+
+            /* Background image settings */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 1s ease-in-out;
+        }
+
+        /* DARK OVERLAY */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: -1;
         }
 
         .box {
-            background: white;
+            background: rgba(255,255,255,0.9);
+            color: black;
             padding: 20px;
             margin: 40px auto;
             width: 420px;
             border-radius: 15px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
         }
 
         button {
@@ -44,7 +64,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.7);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -52,6 +72,7 @@
 
         .popup-box {
             background: white;
+            color: black;
             padding: 20px;
             border-radius: 10px;
         }
@@ -65,19 +86,20 @@
         }
     </style>
 </head>
+
 <body>
 
-<!-- 🎵 MUSIC POPUP -->
+<!-- MUSIC POPUP -->
 <div class="popup" id="musicPopup">
     <div class="popup-box">
         <h2>🎵 Enable Music?</h2>
-        <button onclick="enableMusic()">Yes</button>
-        <button onclick="disableMusic()">No</button>
+        <button onclick="setMusic(true)">Yes</button>
+        <button onclick="setMusic(false)">No</button>
     </div>
 </div>
 
-<!-- 🎛️ TOGGLE BUTTON -->
-<button id="musicToggle" onclick="toggleMusic()" style="display:none;">🔊 Music On</button>
+<!-- MUSIC TOGGLE -->
+<button id="musicToggle" onclick="toggleMusic()" style="display:none;">🔇 Music Off</button>
 
 <!-- START SCREEN -->
 <div class="box" id="startScreen">
@@ -98,19 +120,56 @@
     <p id="score"></p>
 </div>
 
-<!-- Sounds -->
+<!-- SOUND EFFECTS -->
 <audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
 <audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
 
-<!-- Background Music -->
-<audio id="bgMusic" src="*Uploaded successfully:*
-https://files.catbox.moe/d2cjfw.m4a" loop></audio>
+<!-- BACKGROUND MUSIC -->
+<audio id="bgMusic" src="https://files.catbox.moe/d2cjfw.m4a" loop></audio>
 
 <script>
-let player = "";
+// 🖼️ IMAGE LIST (use local folder OR URLs)
+const images = [
+    "https://files.catbox.moe/sca4v4.jpg",
+    "https://files.catbox.moe/ri4psa.jpg",
+    "https://files.catbox.moe/md9t5u.jpg"
+];
+
+// RANDOM BACKGROUND
+function setRandomBackground() {
+    let random = images[Math.floor(Math.random() * images.length)];
+    document.body.style.backgroundImage = `url(${random})`;
+}
+
+// MUSIC CONTROL
 let musicEnabled = false;
 
-// QUESTIONS
+function setMusic(choice) {
+    musicEnabled = choice;
+    document.getElementById("musicPopup").style.display = "none";
+    document.getElementById("musicToggle").style.display = "block";
+    updateMusicButton();
+}
+
+function toggleMusic() {
+    musicEnabled = !musicEnabled;
+    let music = document.getElementById("bgMusic");
+
+    if (musicEnabled) {
+        music.play().catch(()=>{});
+    } else {
+        music.pause();
+    }
+
+    updateMusicButton();
+}
+
+function updateMusicButton() {
+    document.getElementById("musicToggle").innerText =
+        musicEnabled ? "🔊 Music On" : "🔇 Music Off";
+}
+
+// QUIZ DATA
 const quiz = [
     {
         question: "What is my favorite color?",
@@ -129,37 +188,12 @@ const quiz = [
     }
 ];
 
+let player = "";
 let currentQuestion = 0;
 let score = 0;
-let timeLeft = 10;
 let timer;
+let timeLeft = 10;
 let userAnswers = [];
-
-// 🎵 MUSIC CONTROL
-function enableMusic() {
-    musicEnabled = true;
-    document.getElementById("musicPopup").style.display = "none";
-    document.getElementById("musicToggle").style.display = "block";
-    document.getElementById("bgMusic").play();
-}
-
-function disableMusic() {
-    musicEnabled = false;
-    document.getElementById("musicPopup").style.display = "none";
-    document.getElementById("musicToggle").style.display = "block";
-}
-
-function toggleMusic() {
-    let music = document.getElementById("bgMusic");
-
-    if (music.paused) {
-        music.play();
-        document.getElementById("musicToggle").innerText = "🔊 Music On";
-    } else {
-        music.pause();
-        document.getElementById("musicToggle").innerText = "🔇 Music Off";
-    }
-}
 
 // START GAME
 function startGame() {
@@ -173,8 +207,12 @@ function startGame() {
     document.getElementById("startScreen").style.display = "none";
     document.getElementById("quizScreen").style.display = "block";
 
+    setRandomBackground();
+
     if (musicEnabled) {
-        document.getElementById("bgMusic").play();
+        let music = document.getElementById("bgMusic");
+        music.currentTime = 0;
+        music.play().catch(()=>{});
     }
 
     loadQuestion();
@@ -207,20 +245,20 @@ function loadQuestion() {
     document.getElementById("question").innerText = q.question;
     document.getElementById("feedback").innerText = "";
 
-    let answersHTML = "";
-    q.answers.forEach(answer => {
-        answersHTML += `<button onclick="checkAnswer('${answer}')">${answer}</button>`;
+    let html = "";
+    q.answers.forEach(a => {
+        html += `<button onclick="checkAnswer('${a}')">${a}</button>`;
     });
 
-    document.getElementById("answers").innerHTML = answersHTML;
+    document.getElementById("answers").innerHTML = html;
 }
 
 // CHECK ANSWER
-function checkAnswer(answer) {
+function checkAnswer(ans) {
     clearInterval(timer);
-    userAnswers.push(answer);
+    userAnswers.push(ans);
 
-    if (answer === quiz[currentQuestion].correct) {
+    if (ans === quiz[currentQuestion].correct) {
         score++;
         document.getElementById("correctSound").play();
         showFeedback("✅ Correct!", "green");
@@ -233,16 +271,15 @@ function checkAnswer(answer) {
 }
 
 // FEEDBACK
-function showFeedback(message, color) {
+function showFeedback(msg, color) {
     let fb = document.getElementById("feedback");
-    fb.innerText = message;
+    fb.innerText = msg;
     fb.style.color = color;
 }
 
 // NEXT QUESTION
 function nextQuestion() {
     currentQuestion++;
-
     if (currentQuestion < quiz.length) {
         loadQuestion();
     } else {
@@ -250,11 +287,35 @@ function nextQuestion() {
     }
 }
 
+// END GAME
+function endGame() {
+    document.getElementById("bgMusic").pause();
+
+    document.getElementById("question").innerText = "🎉 Game Over!";
+    document.getElementById("answers").innerHTML = "";
+    document.getElementById("timer").innerText = "";
+
+    let html = `<h3>${player}, Score: ${score}/${quiz.length}</h3><hr>`;
+
+    quiz.forEach((q, i) => {
+        html += `
+        <p>
+        <strong>${q.question}</strong><br>
+        Your Answer: ${userAnswers[i]}<br>
+        Correct Answer: ${q.correct}
+        </p><hr>`;
+    });
+
+    document.getElementById("score").innerHTML = html;
+
+    saveScore(player, score);
+    showLeaderboard();
+}
+
 // LEADERBOARD
-function saveScore(name, percent) {
+function saveScore(name, score) {
     let scores = JSON.parse(localStorage.getItem("scores")) || [];
-    scores.push({name, percent});
-    scores.sort((a, b) => b.percent - a.percent);
+    scores.push({name, score});
     localStorage.setItem("scores", JSON.stringify(scores));
 }
 
@@ -262,39 +323,17 @@ function showLeaderboard() {
     let scores = JSON.parse(localStorage.getItem("scores")) || [];
     let html = "";
 
-    scores.slice(0,5).forEach(s => {
-        html += `<p>${s.name} - ${s.percent}%</p>`;
+    scores.slice(-5).reverse().forEach(s => {
+        html += `<p>${s.name}: ${s.score}</p>`;
     });
 
     document.getElementById("leaderboard").innerHTML = html;
 }
 
-// END GAME
-function endGame() {
-    let percent = Math.round((score / quiz.length) * 100);
-    saveScore(player, percent);
-
-    document.getElementById("question").innerText = "🎉 Game Over!";
-    document.getElementById("answers").innerHTML = "";
-    document.getElementById("timer").innerText = "";
-
-    let resultsHTML = `<h3>${player}, Score: ${score}/${quiz.length} (${percent}%)</h3><hr>`;
-
-    quiz.forEach((q, i) => {
-        let userAns = userAnswers[i];
-        let correct = q.correct;
-
-        resultsHTML += `
-        <p><b>Q${i+1}:</b> ${q.question}<br>
-        Your: <span style="color:${userAns === correct ? 'green':'red'}">${userAns}</span><br>
-        Correct: <span style="color:green">${correct}</span></p><hr>`;
-    });
-
-    document.getElementById("score").innerHTML = resultsHTML;
-}
-
 // INIT
+setRandomBackground();
 showLeaderboard();
+
 </script>
 
 </body>
