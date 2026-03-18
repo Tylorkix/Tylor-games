@@ -6,25 +6,43 @@
         body {
             font-family: Arial;
             text-align: center;
-            background-color: #f0f0f0;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
         }
+
         .quiz-box {
             background: white;
             padding: 20px;
             margin: 50px auto;
             width: 400px;
-            border-radius: 10px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
         }
+
         button {
             display: block;
             margin: 10px auto;
             padding: 10px;
             width: 80%;
+            border: none;
+            border-radius: 8px;
+            background-color: #4facfe;
+            color: white;
             cursor: pointer;
+            font-size: 16px;
         }
+
+        button:hover {
+            background-color: #007bff;
+        }
+
         #timer {
             font-size: 20px;
             color: red;
+        }
+
+        #feedback {
+            font-weight: bold;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -32,30 +50,38 @@
 
 <div class="quiz-box">
     <h3 id="timer">Time: 10</h3>
-    <h2 id="question">Question here</h2>
+    <h2 id="question">Loading...</h2>
     <div id="answers"></div>
+    <p id="feedback"></p>
     <p id="score"></p>
 </div>
 
-<!-- iPhone-like sound -->
-<audio id="sound" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
+<!-- Sounds -->
+<audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
+<audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
 
 <script>
+// 🔥 YOUR CUSTOM QUESTIONS
 const quiz = [
     {
         question: "What is my favorite color?",
-        answers: ["Red", "Blue", "Green", "Black"],
+        answers: ["Red", "Blue", "Black", "Green"],
         correct: "Black"
     },
     {
-        question: "What is my favorite food?",
-        answers: ["Pizza", "Ugali", "Burger", "Rice"],
+        question: "What food do I love most?",
+        answers: ["Pizza", "Ugali", "Fries", "Rice"],
         correct: "Ugali"
     },
     {
-        question: "Which game do I like most?",
-        answers: ["FIFA", "COD", "Minecraft", "Fortnite"],
-        correct: "FIFA"
+        question: "What do I hate the most?",
+        answers: ["Noise", "Cold weather", "Waking up early", "Traffic"],
+        correct: "Waking up early"
+    },
+    {
+        question: "What is my dream job?",
+        answers: ["Doctor", "Engineer", "Programmer", "Pilot"],
+        correct: "Programmer"
     }
 ];
 
@@ -64,6 +90,7 @@ let score = 0;
 let timeLeft = 10;
 let timer;
 
+// ⏱️ TIMER
 function startTimer() {
     timeLeft = 10;
     document.getElementById("timer").innerText = "Time: " + timeLeft;
@@ -74,17 +101,20 @@ function startTimer() {
 
         if (timeLeft === 0) {
             clearInterval(timer);
-            nextQuestion();
+            showFeedback("⏰ Time's up!", "orange");
+            setTimeout(nextQuestion, 1000);
         }
     }, 1000);
 }
 
+// LOAD QUESTION
 function loadQuestion() {
     clearInterval(timer);
     startTimer();
 
     let q = quiz[currentQuestion];
     document.getElementById("question").innerText = q.question;
+    document.getElementById("feedback").innerText = "";
 
     let answersHTML = "";
     q.answers.forEach(answer => {
@@ -94,31 +124,61 @@ function loadQuestion() {
     document.getElementById("answers").innerHTML = answersHTML;
 }
 
+// CHECK ANSWER
 function checkAnswer(answer) {
-    document.getElementById("sound").play(); // play sound
-
     clearInterval(timer);
 
     if (answer === quiz[currentQuestion].correct) {
         score++;
+        document.getElementById("correctSound").play();
+        showFeedback("✅ Correct!", "green");
+    } else {
+        document.getElementById("wrongSound").play();
+        showFeedback("❌ Wrong!", "red");
     }
 
-    nextQuestion();
+    setTimeout(nextQuestion, 1000);
 }
 
+// FEEDBACK MESSAGE
+function showFeedback(message, color) {
+    let fb = document.getElementById("feedback");
+    fb.innerText = message;
+    fb.style.color = color;
+}
+
+// NEXT QUESTION
 function nextQuestion() {
     currentQuestion++;
 
     if (currentQuestion < quiz.length) {
         loadQuestion();
     } else {
-        document.getElementById("question").innerText = "Game Over!";
-        document.getElementById("answers").innerHTML = "";
-        document.getElementById("timer").innerText = "";
-        document.getElementById("score").innerText = "Your score: " + score;
+        endGame();
     }
 }
 
+// END GAME
+function endGame() {
+    document.getElementById("question").innerText = "🎉 Game Over!";
+    document.getElementById("answers").innerHTML = "";
+    document.getElementById("timer").innerText = "";
+    document.getElementById("feedback").innerText = "";
+
+    document.getElementById("score").innerText =
+        "Your score: " + score + " / " + quiz.length;
+
+    // Bonus message
+    if (score === quiz.length) {
+        document.getElementById("feedback").innerText = "🔥 You know me perfectly!";
+    } else if (score >= quiz.length / 2) {
+        document.getElementById("feedback").innerText = "😄 Not bad!";
+    } else {
+        document.getElementById("feedback").innerText = "😂 You don’t know me!";
+    }
+}
+
+// START GAME
 loadQuestion();
 </script>
 
