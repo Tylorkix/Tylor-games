@@ -33,25 +33,26 @@ body::after{
     border-radius:15px;
 }
 
+/* buttons */
 button{
-    margin:5px;
-    padding:10px;
-    width:80%;
+    margin:8px;
+    padding:12px;
+    width:85%;
     border:none;
-    border-radius:8px;
+    border-radius:10px;
+    background:linear-gradient(135deg,#6a5af9,#8b7bff);
     color:white;
+    font-weight:bold;
     cursor:pointer;
 }
 
-.blue{background:#4facfe;}
-.red{background:#ff4d4d;}
-.yellow{background:#f7b731;color:black;}
-.green{background:#20bf6b;}
+button:hover{opacity:0.9;}
 
-input{
-    padding:8px;
-    width:80%;
-    margin:5px;
+/* highlight selected question */
+.selected{
+    background:#ffeaa7;
+    padding:5px;
+    border-radius:5px;
 }
 
 /* neon popup */
@@ -65,7 +66,7 @@ input{
     padding:20px 40px;
     border-radius:12px;
     font-size:20px;
-    box-shadow:0 0 10px #00fff7,0 0 25px #00fff7,0 0 40px #00fff7;
+    box-shadow:0 0 10px #00fff7,0 0 25px #00fff7;
     opacity:0;
     transition:0.4s;
 }
@@ -74,21 +75,15 @@ input{
     transform:translate(-50%,-50%) scale(1);
 }
 
-/* confetti */
-.confetti{
-    position:fixed;
-    width:10px;
-    height:10px;
-    top:-10px;
-    animation:fall 3s linear infinite;
-}
-@keyframes fall{
-    to{transform:translateY(100vh);}
+input{
+    padding:10px;
+    width:85%;
+    margin:5px;
 }
 
-/* admin buttons */
-#adminBtn{position:fixed;top:10px;left:10px;background:black;}
-#musicToggle{position:fixed;top:10px;right:10px;}
+/* top buttons */
+#adminBtn{position:fixed;top:10px;left:10px;width:auto;}
+#musicToggle{position:fixed;top:10px;right:10px;width:auto;}
 </style>
 </head>
 
@@ -103,7 +98,7 @@ input{
 <div class="box" id="startScreen">
     <h2>Enter Name</h2>
     <input id="playerName">
-    <button class="green" onclick="startGame()">Start Game</button>
+    <button onclick="startGame()">Start Game</button>
 </div>
 
 <!-- QUIZ -->
@@ -131,10 +126,11 @@ input{
     <input id="opt4" placeholder="Option 4">
     <input id="correctAns" placeholder="Correct Answer">
 
-    <button class="blue" onclick="addQuestion()">Add Another Quiz</button>
-    <button class="yellow" onclick="editQuestion()">Edit Quiz</button>
-    <button class="red" onclick="deleteQuestion()">Delete Quiz</button>
+    <button onclick="addQuestion()">Add Another Quiz</button>
+    <button onclick="editQuestion()">Edit Selected Quiz</button>
+    <button onclick="deleteQuestion()">Delete Selected Quiz</button>
 
+    <h3>📋 Click Question to Edit</h3>
     <div id="questionList"></div>
 
     <button onclick="goHome()">Back</button>
@@ -147,37 +143,22 @@ input{
 
 <script>
 
-// 🖼️ RANDOM BACKGROUNDS
-const backgrounds = [
-"https://files.catbox.moe/md9t5u.jpg",
-"https://files.catbox.moe/ri4psa.jpg",
+// backgrounds
+const backgrounds=[
 "https://files.catbox.moe/sca4v4.jpg",
-"https://files.catbox.moe/36rpa7.jpg"
+"https://files.catbox.moe/ri4psa.jpg",
+"https://files.catbox.moe/md9t5u.jpg"
 ];
-
 function setRandomBackground(){
-    let random = backgrounds[Math.floor(Math.random()*backgrounds.length)];
-    document.body.style.backgroundImage = `url('${random}')`;
+    document.body.style.backgroundImage=
+    `url(${backgrounds[Math.floor(Math.random()*backgrounds.length)]})`;
 }
 
 // popup
 function showPopup(msg){
-    let p=document.getElementById("neonPopup");
-    p.innerText=msg;
-    p.classList.add("show");
-    setTimeout(()=>p.classList.remove("show"),2000);
-}
-
-// confetti
-function confetti(){
-    for(let i=0;i<50;i++){
-        let c=document.createElement("div");
-        c.className="confetti";
-        c.style.left=Math.random()*100+"%";
-        c.style.background=`hsl(${Math.random()*360},100%,50%)`;
-        document.body.appendChild(c);
-        setTimeout(()=>c.remove(),3000);
-    }
+    neonPopup.innerText=msg;
+    neonPopup.classList.add("show");
+    setTimeout(()=>neonPopup.classList.remove("show"),2000);
 }
 
 // music
@@ -192,7 +173,39 @@ function toggleMusic(){
 function getQ(){return JSON.parse(localStorage.getItem("questions"))||[];}
 function saveQ(q){localStorage.setItem("questions",JSON.stringify(q));}
 
-// admin
+let selectedIndex=null;
+
+// admin list
+function loadAdmin(){
+    let q=getQ();
+    let html="";
+    q.forEach((item,i)=>{
+        html+=`<p onclick="selectQuestion(${i})"
+        class="${i===selectedIndex?'selected':''}">
+        ${i+1}. ${item.question}
+        </p>`;
+    });
+    questionList.innerHTML=html;
+}
+
+// select question
+function selectQuestion(i){
+    let q=getQ();
+    selectedIndex=i;
+
+    let item=q[i];
+    qText.value=item.question;
+    opt1.value=item.answers[0]||"";
+    opt2.value=item.answers[1]||"";
+    opt3.value=item.answers[2]||"";
+    opt4.value=item.answers[3]||"";
+    correctAns.value=item.correct;
+
+    loadAdmin();
+    showPopup("✏️ Question loaded");
+}
+
+// add
 function addQuestion(){
     let q=getQ();
     q.push({
@@ -204,26 +217,40 @@ function addQuestion(){
     showPopup("✨ Question added!");
     loadAdmin();
 }
+
+// edit selected
 function editQuestion(){
+    if(selectedIndex===null){
+        showPopup("Select a question first");
+        return;
+    }
+
     let q=getQ();
-    if(q.length==0)return;
-    q[0]={question:qText.value,answers:[opt1.value,opt2.value,opt3.value,opt4.value],correct:correctAns.value};
+    q[selectedIndex]={
+        question:qText.value,
+        answers:[opt1.value,opt2.value,opt3.value,opt4.value].filter(a=>a!=""),
+        correct:correctAns.value
+    };
+
     saveQ(q);
-    showPopup("✏️ Edited!");
+    showPopup("✏️ Updated!");
     loadAdmin();
 }
+
+// delete selected
 function deleteQuestion(){
+    if(selectedIndex===null){
+        showPopup("Select a question first");
+        return;
+    }
+
     let q=getQ();
-    q.pop();
+    q.splice(selectedIndex,1);
     saveQ(q);
+
+    selectedIndex=null;
     showPopup("❌ Deleted!");
     loadAdmin();
-}
-function loadAdmin(){
-    let q=getQ();
-    let html="";
-    q.forEach((x,i)=>html+=`<p>${i+1}. ${x.question}</p>`);
-    questionList.innerHTML=html;
 }
 
 // game
@@ -234,8 +261,7 @@ function startGame(){
     if(!name){showPopup("⚠️ Enter your name");return;}
 
     showPopup("🎮 Game Started");
-
-    setRandomBackground(); // 🔥 change background on start
+    setRandomBackground();
 
     quiz=getQ();
     if(quiz.length==0){
@@ -252,20 +278,23 @@ function startGame(){
 function nextQ(){
     clearInterval(timer);
     t=10;
+
     timer=setInterval(()=>{
         document.getElementById("timer").innerText="Time:"+t;
         t--;
-        if(t<0){clearInterval(timer);answers.push("No Answer");next();}
+        if(t<0){
+            clearInterval(timer);
+            answers.push("No Answer");
+            next();
+        }
     },1000);
 
     let q=quiz[i];
     question.innerText=q.question;
 
-    let html="";
-    q.answers.forEach(a=>{
-        html+=`<button onclick="check('${a}')">${a}</button>`;
-    });
-    document.getElementById("answers").innerHTML=html;
+    answers.innerHTML=q.answers.map(a=>
+        `<button onclick="check('${a}')">${a}</button>`
+    ).join("");
 }
 
 function check(a){
@@ -286,35 +315,26 @@ function endGame(){
 
     let percent=Math.round((score/quiz.length)*100);
 
-    let result=`<h2>Score: ${score}/${quiz.length}</h2>
-                <h3>${percent}%</h3>`;
+    let result=`<h2>${score}/${quiz.length}</h2><h3>${percent}%</h3>`;
 
-    if(percent===100){
-        result+=`<h2>🥇 PERFECT SCORE!</h2>`;
-        confetti();
-    }
-
-    result+="<h3>Results:</h3>";
+    if(percent===100){result+="🥇 PERFECT!";}
 
     quiz.forEach((q,index)=>{
         let user=answers[index]||"No Answer";
-        let correct=q.correct;
-        let ok=user===correct;
+        let ok=user===q.correct;
 
-        result+=`
-        <div style="margin:10px;padding:10px;border-radius:10px;
-        background:${ok?'#20bf6b':'#ff4d4d'};">
+        result+=`<div style="background:${ok?'green':'red'};padding:10px;margin:10px;border-radius:10px;">
         ${q.question}<br>
         You: ${user} ${ok?'✅':'❌'}<br>
-        Correct: ${correct}
+        Correct: ${q.correct}
         </div>`;
     });
 
-    document.getElementById("question").innerHTML=result;
-    document.getElementById("answers").innerHTML="";
+    question.innerHTML=result;
+    answers.innerHTML="";
 }
 
-// admin nav
+// nav
 function openAdmin(){
     startScreen.style.display="none";
     adminLogin.style.display="block";
@@ -331,7 +351,7 @@ function goHome(){
     startScreen.style.display="block";
 }
 
-// 🔥 LOAD BACKGROUND ON PAGE LOAD
+// init
 setRandomBackground();
 
 </script>
