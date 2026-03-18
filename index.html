@@ -33,7 +33,6 @@ body::after{
     border-radius:15px;
 }
 
-/* buttons */
 button{
     margin:8px;
     padding:12px;
@@ -45,17 +44,17 @@ button{
     font-weight:bold;
     cursor:pointer;
 }
-
 button:hover{opacity:0.9;}
 
-/* highlight selected question */
-.selected{
-    background:#ffeaa7;
-    padding:5px;
-    border-radius:5px;
+#adminBtn{position:fixed;top:10px;left:10px;width:auto;}
+#musicToggle{position:fixed;top:10px;right:10px;width:auto;}
+
+input{
+    padding:10px;
+    width:85%;
+    margin:5px;
 }
 
-/* neon popup */
 #neonPopup{
     position:fixed;
     top:50%;
@@ -74,16 +73,6 @@ button:hover{opacity:0.9;}
     opacity:1;
     transform:translate(-50%,-50%) scale(1);
 }
-
-input{
-    padding:10px;
-    width:85%;
-    margin:5px;
-}
-
-/* top buttons */
-#adminBtn{position:fixed;top:10px;left:10px;width:auto;}
-#musicToggle{position:fixed;top:10px;right:10px;width:auto;}
 </style>
 </head>
 
@@ -145,7 +134,7 @@ input{
 
 // backgrounds
 const backgrounds=[
-"https://files.catbox.moe/sca4v4.jpg",
+"https://files.catbox.moe/36rpa7.jpg",
 "https://files.catbox.moe/ri4psa.jpg",
 "https://files.catbox.moe/md9t5u.jpg"
 ];
@@ -175,20 +164,50 @@ function saveQ(q){localStorage.setItem("questions",JSON.stringify(q));}
 
 let selectedIndex=null;
 
-// admin list
+// 🔥 UPDATED ADMIN VIEW
 function loadAdmin(){
     let q=getQ();
     let html="";
+
     q.forEach((item,i)=>{
-        html+=`<p onclick="selectQuestion(${i})"
-        class="${i===selectedIndex?'selected':''}">
-        ${i+1}. ${item.question}
-        </p>`;
+
+        let optionsHTML = item.answers.map(opt=>{
+            let isCorrect = opt === item.correct;
+            return `<div style="
+                padding:5px;
+                margin:3px;
+                border-radius:5px;
+                background:${isCorrect ? '#c8f7c5' : '#f1f1f1'};
+                color:${isCorrect ? 'green' : 'black'};
+                font-weight:${isCorrect ? 'bold' : 'normal'};
+            ">
+            ${isCorrect ? '✅' : '•'} ${opt}
+            </div>`;
+        }).join("");
+
+        html+=`
+        <div onclick="selectQuestion(${i})"
+        style="
+            border:2px solid ${i===selectedIndex ? '#6a5af9' : '#ddd'};
+            padding:10px;
+            margin:10px 0;
+            border-radius:10px;
+            cursor:pointer;
+            background:${i===selectedIndex ? '#f3f0ff' : 'white'};
+        ">
+            <b>${i+1}. ${item.question}</b>
+            <div style="margin-top:5px;">${optionsHTML}</div>
+            <div style="margin-top:5px; color:green;">
+                ✔ Correct: ${item.correct}
+            </div>
+        </div>
+        `;
     });
+
     questionList.innerHTML=html;
 }
 
-// select question
+// select
 function selectQuestion(i){
     let q=getQ();
     selectedIndex=i;
@@ -218,7 +237,7 @@ function addQuestion(){
     loadAdmin();
 }
 
-// edit selected
+// edit
 function editQuestion(){
     if(selectedIndex===null){
         showPopup("Select a question first");
@@ -237,7 +256,7 @@ function editQuestion(){
     loadAdmin();
 }
 
-// delete selected
+// delete
 function deleteQuestion(){
     if(selectedIndex===null){
         showPopup("Select a question first");
@@ -351,7 +370,6 @@ function goHome(){
     startScreen.style.display="block";
 }
 
-// init
 setRandomBackground();
 
 </script>
