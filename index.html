@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Ultimate Quiz Game</title>
+<title>Insane Quiz Game</title>
 
 <style>
 body{
@@ -11,26 +11,38 @@ body{
     color:white;
     background-size:cover;
     background-position:center;
+    transition:background-image 0.5s ease;
 }
 
-body::after{
+/* animated overlay */
+body::before{
     content:"";
     position:fixed;
     width:100%;
     height:100%;
-    background:rgba(0,0,0,0.6);
+    background:linear-gradient(-45deg,#1a1a2eaa,#16213eaa,#0f3460aa,#533483aa);
+    background-size:400% 400%;
+    animation:bgMove 12s ease infinite;
     top:0;
     left:0;
     z-index:-1;
 }
 
+@keyframes bgMove{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
+
+/* glass card */
 .box{
-    background:white;
-    color:black;
-    padding:20px;
-    width:420px;
-    margin:40px auto;
-    border-radius:15px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(15px);
+    border-radius:20px;
+    padding:30px;
+    width:450px;
+    margin:80px auto;
+    box-shadow:0 0 25px rgba(0,0,0,0.4);
 }
 
 button{
@@ -38,22 +50,38 @@ button{
     padding:12px;
     width:85%;
     border:none;
-    border-radius:10px;
-    background:linear-gradient(135deg,#6a5af9,#8b7bff);
+    border-radius:12px;
+    background:linear-gradient(135deg,#4a74b5,#5f8dd3);
     color:white;
     font-weight:bold;
     cursor:pointer;
 }
-button:hover{opacity:0.9;}
+button:hover{transform:scale(1.05);}
+
+#question{font-size:28px;margin-bottom:20px;}
+
+#timerBar{
+    height:8px;
+    width:100%;
+    background:#333;
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:15px;
+}
+#timerFill{
+    height:100%;
+    width:100%;
+    background:#00ffcc;
+    transition:width 1s linear;
+}
+
+.correct{background:green !important;}
+.wrong{background:red !important;}
 
 #adminBtn{position:fixed;top:10px;left:10px;width:auto;}
 #musicToggle{position:fixed;top:10px;right:10px;width:auto;}
 
-input{
-    padding:10px;
-    width:85%;
-    margin:5px;
-}
+input{padding:10px;width:85%;margin:5px;}
 
 #neonPopup{
     position:fixed;
@@ -64,7 +92,6 @@ input{
     color:#00fff7;
     padding:20px 40px;
     border-radius:12px;
-    font-size:20px;
     box-shadow:0 0 10px #00fff7,0 0 25px #00fff7;
     opacity:0;
     transition:0.4s;
@@ -83,28 +110,25 @@ input{
 
 <div id="neonPopup"></div>
 
-<!-- START -->
 <div class="box" id="startScreen">
     <h2>Enter Name</h2>
     <input id="playerName">
     <button onclick="startGame()">Start Game</button>
 </div>
 
-<!-- QUIZ -->
 <div class="box" id="quizScreen" style="display:none;">
     <h3 id="timer"></h3>
+    <div id="timerBar"><div id="timerFill"></div></div>
     <h2 id="question"></h2>
     <div id="answers"></div>
 </div>
 
-<!-- ADMIN LOGIN -->
 <div class="box" id="adminLogin" style="display:none;">
     <h2>Admin Login</h2>
     <input id="adminPass" type="password">
     <button onclick="checkAdmin()">Login</button>
 </div>
 
-<!-- ADMIN PANEL -->
 <div class="box" id="adminPanel" style="display:none;">
     <h2>Admin Panel</h2>
 
@@ -125,19 +149,20 @@ input{
     <button onclick="goHome()">Back</button>
 </div>
 
-<!-- AUDIO -->
 <audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
 <audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
 <audio id="bgMusic" src="https://files.catbox.moe/d2cjfw.m4a" loop></audio>
 
 <script>
 
-// backgrounds
+// 🔥 BACKGROUND IMAGES
 const backgrounds=[
+"https://files.catbox.moe/sca4v4.jpg",
 "https://files.catbox.moe/36rpa7.jpg",
 "https://files.catbox.moe/ri4psa.jpg",
 "https://files.catbox.moe/md9t5u.jpg"
 ];
+
 function setRandomBackground(){
     document.body.style.backgroundImage=
     `url(${backgrounds[Math.floor(Math.random()*backgrounds.length)]})`;
@@ -164,50 +189,30 @@ function saveQ(q){localStorage.setItem("questions",JSON.stringify(q));}
 
 let selectedIndex=null;
 
-// 🔥 UPDATED ADMIN VIEW
+// admin display
 function loadAdmin(){
     let q=getQ();
     let html="";
 
     q.forEach((item,i)=>{
-
-        let optionsHTML = item.answers.map(opt=>{
-            let isCorrect = opt === item.correct;
-            return `<div style="
-                padding:5px;
-                margin:3px;
-                border-radius:5px;
-                background:${isCorrect ? '#c8f7c5' : '#f1f1f1'};
-                color:${isCorrect ? 'green' : 'black'};
-                font-weight:${isCorrect ? 'bold' : 'normal'};
-            ">
-            ${isCorrect ? '✅' : '•'} ${opt}
-            </div>`;
+        let optionsHTML=item.answers.map(opt=>{
+            let ok=opt===item.correct;
+            return `<div style="background:${ok?'#c8f7c5':'#eee'};margin:3px;padding:5px;border-radius:5px;">
+            ${ok?'✅':'•'} ${opt}</div>`;
         }).join("");
 
         html+=`
         <div onclick="selectQuestion(${i})"
-        style="
-            border:2px solid ${i===selectedIndex ? '#6a5af9' : '#ddd'};
-            padding:10px;
-            margin:10px 0;
-            border-radius:10px;
-            cursor:pointer;
-            background:${i===selectedIndex ? '#f3f0ff' : 'white'};
-        ">
-            <b>${i+1}. ${item.question}</b>
-            <div style="margin-top:5px;">${optionsHTML}</div>
-            <div style="margin-top:5px; color:green;">
-                ✔ Correct: ${item.correct}
-            </div>
-        </div>
-        `;
+        style="border:2px solid ${i===selectedIndex?'#6a5af9':'#ddd'};margin:10px;padding:10px;border-radius:10px;">
+        <b>${i+1}. ${item.question}</b>
+        ${optionsHTML}
+        <div style="color:green;">✔ ${item.correct}</div>
+        </div>`;
     });
 
     questionList.innerHTML=html;
 }
 
-// select
 function selectQuestion(i){
     let q=getQ();
     selectedIndex=i;
@@ -221,10 +226,9 @@ function selectQuestion(i){
     correctAns.value=item.correct;
 
     loadAdmin();
-    showPopup("✏️ Question loaded");
+    showPopup("✏️ Loaded");
 }
 
-// add
 function addQuestion(){
     let q=getQ();
     q.push({
@@ -233,16 +237,12 @@ function addQuestion(){
         correct:correctAns.value
     });
     saveQ(q);
-    showPopup("✨ Question added!");
+    showPopup("✨ Added");
     loadAdmin();
 }
 
-// edit
 function editQuestion(){
-    if(selectedIndex===null){
-        showPopup("Select a question first");
-        return;
-    }
+    if(selectedIndex===null)return showPopup("Select first");
 
     let q=getQ();
     q[selectedIndex]={
@@ -250,25 +250,19 @@ function editQuestion(){
         answers:[opt1.value,opt2.value,opt3.value,opt4.value].filter(a=>a!=""),
         correct:correctAns.value
     };
-
     saveQ(q);
-    showPopup("✏️ Updated!");
+    showPopup("✏️ Updated");
     loadAdmin();
 }
 
-// delete
 function deleteQuestion(){
-    if(selectedIndex===null){
-        showPopup("Select a question first");
-        return;
-    }
+    if(selectedIndex===null)return showPopup("Select first");
 
     let q=getQ();
     q.splice(selectedIndex,1);
     saveQ(q);
-
     selectedIndex=null;
-    showPopup("❌ Deleted!");
+    showPopup("❌ Deleted");
     loadAdmin();
 }
 
@@ -276,11 +270,10 @@ function deleteQuestion(){
 let quiz=[],i=0,score=0,answers=[],timer,t=10;
 
 function startGame(){
-    let name=playerName.value;
-    if(!name){showPopup("⚠️ Enter your name");return;}
+    if(!playerName.value){showPopup("Enter name");return;}
 
-    showPopup("🎮 Game Started");
     setRandomBackground();
+    showPopup("🎮 Start");
 
     quiz=getQ();
     if(quiz.length==0){
@@ -295,11 +288,14 @@ function startGame(){
 }
 
 function nextQ(){
+    setRandomBackground();
+
     clearInterval(timer);
     t=10;
 
     timer=setInterval(()=>{
-        document.getElementById("timer").innerText="Time:"+t;
+        timer.innerText="Time:"+t;
+        timerFill.style.width=(t/10)*100+"%";
         t--;
         if(t<0){
             clearInterval(timer);
@@ -316,11 +312,21 @@ function nextQ(){
     ).join("");
 }
 
-function check(a){
-    answers.push(a);
-    if(a==quiz[i].correct){score++;correctSound.play();}
+function check(ans){
+    let btns=document.querySelectorAll("#answers button");
+
+    btns.forEach(b=>{
+        if(b.innerText===quiz[i].correct)b.classList.add("correct");
+        if(b.innerText===ans && ans!==quiz[i].correct)b.classList.add("wrong");
+        b.disabled=true;
+    });
+
+    answers.push(ans);
+
+    if(ans===quiz[i].correct){score++;correctSound.play();}
     else{wrongSound.play();}
-    next();
+
+    setTimeout(next,1000);
 }
 
 function next(){
@@ -330,26 +336,38 @@ function next(){
 }
 
 function endGame(){
-    bgMusic.pause();
-
     let percent=Math.round((score/quiz.length)*100);
 
-    let result=`<h2>${score}/${quiz.length}</h2><h3>${percent}%</h3>`;
+    let html=`<h2>${score}/${quiz.length}</h2><h3>${percent}%</h3>`;
 
-    if(percent===100){result+="🥇 PERFECT!";}
+    if(percent===100){
+        html+="🎉 PERFECT!";
+        for(let i=0;i<50;i++){
+            let c=document.createElement("div");
+            c.style.position="fixed";
+            c.style.width="10px";
+            c.style.height="10px";
+            c.style.background=`hsl(${Math.random()*360},100%,50%)`;
+            c.style.left=Math.random()*100+"%";
+            c.style.top="-10px";
+            c.style.animation="fall 3s linear";
+            document.body.appendChild(c);
+            setTimeout(()=>c.remove(),3000);
+        }
+    }
 
-    quiz.forEach((q,index)=>{
-        let user=answers[index]||"No Answer";
+    quiz.forEach((q,idx)=>{
+        let user=answers[idx]||"No Answer";
         let ok=user===q.correct;
 
-        result+=`<div style="background:${ok?'green':'red'};padding:10px;margin:10px;border-radius:10px;">
+        html+=`<div style="background:${ok?'green':'red'};margin:10px;padding:10px;border-radius:10px;">
         ${q.question}<br>
         You: ${user} ${ok?'✅':'❌'}<br>
         Correct: ${q.correct}
         </div>`;
     });
 
-    question.innerHTML=result;
+    question.innerHTML=html;
     answers.innerHTML="";
 }
 
@@ -363,15 +381,12 @@ function checkAdmin(){
         adminLogin.style.display="none";
         adminPanel.style.display="block";
         loadAdmin();
-    }else showPopup("Wrong password");
+    }else showPopup("Wrong");
 }
 function goHome(){
     adminPanel.style.display="none";
     startScreen.style.display="block";
 }
-
-setRandomBackground();
-
 </script>
 
 </body>
