@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Quiz Game</title>
+<title>Ultimate Quiz Game</title>
 
 <style>
 body{
@@ -10,7 +10,7 @@ body{
     margin:0;
     color:white;
     background-size:cover;
-    transition:background 1s;
+    background-position:center;
 }
 
 body::after{
@@ -34,15 +34,19 @@ body::after{
 }
 
 button{
-    margin:8px;
+    margin:5px;
     padding:10px;
     width:80%;
     border:none;
     border-radius:8px;
-    background:#4facfe;
     color:white;
     cursor:pointer;
 }
+
+.blue{background:#4facfe;}
+.red{background:#ff4d4d;}
+.yellow{background:#f7b731;color:black;}
+.green{background:#20bf6b;}
 
 input{
     padding:8px;
@@ -50,93 +54,61 @@ input{
     margin:5px;
 }
 
-/* 🚀 Pulsing Button */
-.deploy-btn{
-    border-radius:25px;
-    background:linear-gradient(135deg,#6a5af9,#8b7bff);
-    animation:pulse 1.5s infinite;
-}
-
-@keyframes pulse{
-    0%{box-shadow:0 0 10px #6a5af9;}
-    50%{box-shadow:0 0 25px #8b7bff;}
-    100%{box-shadow:0 0 10px #6a5af9;}
-}
-
-/* leaderboard */
-#leaderboardBox{
-    display:none;
-    opacity:0;
-    transform:translateY(20px);
-    transition:0.5s;
-}
-#leaderboardBox.show{
-    display:block;
-    opacity:1;
-    transform:translateY(0);
-}
-
-.player{
-    display:flex;
-    justify-content:space-between;
-    padding:5px;
-}
-
-.avatar{
-    background:#6a5af9;
-    color:white;
-    border-radius:50%;
-    width:30px;
-    height:30px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-/* admin */
-#adminBtn{
+/* neon popup */
+#neonPopup{
     position:fixed;
-    top:10px;
-    left:10px;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%) scale(0.8);
     background:black;
-    color:white;
-    width:auto;
+    color:#00fff7;
+    padding:20px 40px;
+    border-radius:12px;
+    font-size:20px;
+    box-shadow:0 0 10px #00fff7,0 0 25px #00fff7,0 0 40px #00fff7;
+    opacity:0;
+    transition:0.4s;
+}
+#neonPopup.show{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
 }
 
-/* music button */
-#musicToggle{
+/* confetti */
+.confetti{
     position:fixed;
-    top:10px;
-    right:10px;
-    width:auto;
+    width:10px;
+    height:10px;
+    top:-10px;
+    animation:fall 3s linear infinite;
 }
+@keyframes fall{
+    to{transform:translateY(100vh);}
+}
+
+/* admin buttons */
+#adminBtn{position:fixed;top:10px;left:10px;background:black;}
+#musicToggle{position:fixed;top:10px;right:10px;}
 </style>
 </head>
 
 <body>
 
 <button id="adminBtn" onclick="openAdmin()">👑 Admin</button>
-<button id="musicToggle" onclick="toggleMusic()">🔇 Music Off</button>
+<button id="musicToggle" onclick="toggleMusic()">🔇 Music</button>
+
+<div id="neonPopup"></div>
 
 <!-- START -->
 <div class="box" id="startScreen">
     <h2>Enter Name</h2>
     <input id="playerName">
-    <button onclick="startGame()">Start Game</button>
-
-    <button class="deploy-btn" onclick="toggleLeaderboard(event)">
-        🚀 View Friends Results
-    </button>
-
-    <div id="leaderboardBox">
-        <h3>🏆 Leaderboard</h3>
-        <div id="leaderboard"></div>
-    </div>
+    <button class="green" onclick="startGame()">Start Game</button>
 </div>
 
 <!-- QUIZ -->
 <div class="box" id="quizScreen" style="display:none;">
-    <h3 id="timer">Time:10</h3>
+    <h3 id="timer"></h3>
     <h2 id="question"></h2>
     <div id="answers"></div>
 </div>
@@ -144,7 +116,7 @@ input{
 <!-- ADMIN LOGIN -->
 <div class="box" id="adminLogin" style="display:none;">
     <h2>Admin Login</h2>
-    <input type="password" id="adminPass">
+    <input id="adminPass" type="password">
     <button onclick="checkAdmin()">Login</button>
 </div>
 
@@ -152,23 +124,20 @@ input{
 <div class="box" id="adminPanel" style="display:none;">
     <h2>Admin Panel</h2>
 
-    <h3>➕ Add Question</h3>
-    <input id="qText" placeholder="Question"><br>
-    <input id="opt1" placeholder="Option 1"><br>
-    <input id="opt2" placeholder="Option 2"><br>
-    <input id="opt3" placeholder="Option 3"><br>
-    <input id="opt4" placeholder="Option 4"><br>
-    <input id="correctAns" placeholder="Correct Answer"><br>
-    <button onclick="addQuestion()">Add Question</button>
+    <input id="qText" placeholder="Question">
+    <input id="opt1" placeholder="Option 1">
+    <input id="opt2" placeholder="Option 2">
+    <input id="opt3" placeholder="Option 3">
+    <input id="opt4" placeholder="Option 4">
+    <input id="correctAns" placeholder="Correct Answer">
 
-    <hr>
+    <button class="blue" onclick="addQuestion()">Add Another Quiz</button>
+    <button class="yellow" onclick="editQuestion()">Edit Quiz</button>
+    <button class="red" onclick="deleteQuestion()">Delete Quiz</button>
 
-    <button onclick="clearLeaderboard()">🗑 Clear Leaderboard</button>
+    <div id="questionList"></div>
 
-    <h3>Scores</h3>
-    <div id="adminBoard"></div>
-
-    <button onclick="goHome()">⬅ Back</button>
+    <button onclick="goHome()">Back</button>
 </div>
 
 <!-- AUDIO -->
@@ -178,252 +147,192 @@ input{
 
 <script>
 
-// 🖼️ BACKGROUND
-const images=["https://files.catbox.moe/sca4v4.jpg","https://files.catbox.moe/ri4psa.jpg","https://files.catbox.moe/md9t5u.jpg"];
-function setBg(){
-    let r=images[Math.floor(Math.random()*images.length)];
-    document.body.style.backgroundImage=`url(${r})`;
+// 🖼️ RANDOM BACKGROUNDS
+const backgrounds = [
+"https://files.catbox.moe/md9t5u.jpg",
+"https://files.catbox.moe/ri4psa.jpg",
+"https://files.catbox.moe/sca4v4.jpg",
+"https://files.catbox.moe/36rpa7.jpg"
+];
+
+function setRandomBackground(){
+    let random = backgrounds[Math.floor(Math.random()*backgrounds.length)];
+    document.body.style.backgroundImage = `url('${random}')`;
 }
 
-// 🎵 MUSIC
-let musicEnabled=false;
+// popup
+function showPopup(msg){
+    let p=document.getElementById("neonPopup");
+    p.innerText=msg;
+    p.classList.add("show");
+    setTimeout(()=>p.classList.remove("show"),2000);
+}
 
+// confetti
+function confetti(){
+    for(let i=0;i<50;i++){
+        let c=document.createElement("div");
+        c.className="confetti";
+        c.style.left=Math.random()*100+"%";
+        c.style.background=`hsl(${Math.random()*360},100%,50%)`;
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(),3000);
+    }
+}
+
+// music
+let musicOn=false;
 function toggleMusic(){
-    let m=document.getElementById("bgMusic");
-
-    musicEnabled=!musicEnabled;
-
-    if(musicEnabled){
-        m.play().catch(()=>{});
-        document.getElementById("musicToggle").innerText="🔊 Music On";
-    }else{
-        m.pause();
-        document.getElementById("musicToggle").innerText="🔇 Music Off";
-    }
+    musicOn=!musicOn;
+    if(musicOn){bgMusic.play();showPopup("🎵 Music On")}
+    else{bgMusic.pause();showPopup("🔇 Music Off")}
 }
 
-// QUIZ STORAGE
-let quiz=[];
+// storage
+function getQ(){return JSON.parse(localStorage.getItem("questions"))||[];}
+function saveQ(q){localStorage.setItem("questions",JSON.stringify(q));}
 
-function loadQuestions(){
-    let saved=JSON.parse(localStorage.getItem("questions"));
-    if(saved && saved.length>0){
-        quiz=saved;
-    }else{
-        quiz=[{
-            question:"Favorite color?",
-            answers:["Red","Blue","Black"],
-            correct:"Black"
-        }];
-    }
+// admin
+function addQuestion(){
+    let q=getQ();
+    q.push({
+        question:qText.value,
+        answers:[opt1.value,opt2.value,opt3.value,opt4.value].filter(a=>a!=""),
+        correct:correctAns.value
+    });
+    saveQ(q);
+    showPopup("✨ Question added!");
+    loadAdmin();
+}
+function editQuestion(){
+    let q=getQ();
+    if(q.length==0)return;
+    q[0]={question:qText.value,answers:[opt1.value,opt2.value,opt3.value,opt4.value],correct:correctAns.value};
+    saveQ(q);
+    showPopup("✏️ Edited!");
+    loadAdmin();
+}
+function deleteQuestion(){
+    let q=getQ();
+    q.pop();
+    saveQ(q);
+    showPopup("❌ Deleted!");
+    loadAdmin();
+}
+function loadAdmin(){
+    let q=getQ();
+    let html="";
+    q.forEach((x,i)=>html+=`<p>${i+1}. ${x.question}</p>`);
+    questionList.innerHTML=html;
 }
 
-// GAME
-let player="",score=0,current=0,timer,timeLeft=10,userAnswers=[];
+// game
+let quiz=[],i=0,score=0,answers=[],timer,t=10;
 
 function startGame(){
-    player=document.getElementById("playerName").value;
-    if(!player){alert("Enter name");return;}
+    let name=playerName.value;
+    if(!name){showPopup("⚠️ Enter your name");return;}
 
-    loadQuestions();
+    showPopup("🎮 Game Started");
 
-    document.getElementById("startScreen").style.display="none";
-    document.getElementById("quizScreen").style.display="block";
+    setRandomBackground(); // 🔥 change background on start
 
-    current=0;
-    score=0;
-    userAnswers=[];
-
-    setBg();
-
-    if(musicEnabled){
-        let m=document.getElementById("bgMusic");
-        m.currentTime=0;
-        m.play().catch(()=>{});
+    quiz=getQ();
+    if(quiz.length==0){
+        quiz=[{question:"Test?",answers:["Yes","No"],correct:"Yes"}];
     }
 
-    loadQuestion();
+    startScreen.style.display="none";
+    quizScreen.style.display="block";
+
+    i=0;score=0;answers=[];
+    nextQ();
 }
 
-function loadQuestion(){
+function nextQ(){
     clearInterval(timer);
-    startTimer();
+    t=10;
+    timer=setInterval(()=>{
+        document.getElementById("timer").innerText="Time:"+t;
+        t--;
+        if(t<0){clearInterval(timer);answers.push("No Answer");next();}
+    },1000);
 
-    let q=quiz[current];
-    document.getElementById("question").innerText=q.question;
+    let q=quiz[i];
+    question.innerText=q.question;
 
     let html="";
     q.answers.forEach(a=>{
         html+=`<button onclick="check('${a}')">${a}</button>`;
     });
-
     document.getElementById("answers").innerHTML=html;
 }
 
-function startTimer(){
-    timeLeft=10;
-    document.getElementById("timer").innerText="Time:"+timeLeft;
-
-    timer=setInterval(()=>{
-        timeLeft--;
-        document.getElementById("timer").innerText="Time:"+timeLeft;
-
-        if(timeLeft===0){
-            clearInterval(timer);
-            userAnswers.push("No Answer");
-            next();
-        }
-    },1000);
-}
-
-function check(ans){
-    clearInterval(timer);
-    userAnswers.push(ans);
-
-    if(ans===quiz[current].correct){
-        score++;
-        correctSound.play();
-    }else{
-        wrongSound.play();
-    }
-
-    setTimeout(next,800);
+function check(a){
+    answers.push(a);
+    if(a==quiz[i].correct){score++;correctSound.play();}
+    else{wrongSound.play();}
+    next();
 }
 
 function next(){
-    current++;
-    if(current<quiz.length){
-        loadQuestion();
-    }else{
-        endGame();
-    }
+    i++;
+    if(i<quiz.length)nextQ();
+    else endGame();
 }
 
 function endGame(){
-    document.getElementById("bgMusic").pause();
+    bgMusic.pause();
 
-    let result="<h3>Score: "+score+"</h3><h4>Answers:</h4>";
+    let percent=Math.round((score/quiz.length)*100);
 
-    quiz.forEach((q,i)=>{
+    let result=`<h2>Score: ${score}/${quiz.length}</h2>
+                <h3>${percent}%</h3>`;
+
+    if(percent===100){
+        result+=`<h2>🥇 PERFECT SCORE!</h2>`;
+        confetti();
+    }
+
+    result+="<h3>Results:</h3>";
+
+    quiz.forEach((q,index)=>{
+        let user=answers[index]||"No Answer";
+        let correct=q.correct;
+        let ok=user===correct;
+
         result+=`
-        <p>
+        <div style="margin:10px;padding:10px;border-radius:10px;
+        background:${ok?'#20bf6b':'#ff4d4d'};">
         ${q.question}<br>
-        You: ${userAnswers[i]}<br>
-        Correct: ${q.correct}
-        </p>`;
-    });
-
-    document.getElementById("question").innerHTML="Game Over";
-    document.getElementById("answers").innerHTML=result;
-
-    saveScore(player,score);
-    showLeaderboard();
-}
-
-// LEADERBOARD
-function saveScore(name,score){
-    let scores=JSON.parse(localStorage.getItem("scores"))||[];
-    scores.push({name,score});
-    localStorage.setItem("scores",JSON.stringify(scores));
-}
-
-function showLeaderboard(){
-    let scores=JSON.parse(localStorage.getItem("scores"))||[];
-    scores.sort((a,b)=>b.score-a.score);
-
-    let html="";
-    scores.forEach((s,i)=>{
-        let medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
-        html+=`
-        <div class="player">
-            <div class="avatar">${s.name[0]}</div>
-            <div>${medal} ${i+1}. ${s.name} - ${s.score}</div>
+        You: ${user} ${ok?'✅':'❌'}<br>
+        Correct: ${correct}
         </div>`;
     });
 
-    document.getElementById("leaderboard").innerHTML=html;
+    document.getElementById("question").innerHTML=result;
+    document.getElementById("answers").innerHTML="";
 }
 
-function toggleLeaderboard(e){
-    let box=document.getElementById("leaderboardBox");
-
-    if(box.classList.contains("show")){
-        box.classList.remove("show");
-        e.target.innerText="🚀 View Friends Results";
-    }else{
-        box.classList.add("show");
-        e.target.innerText="❌ Hide Results";
-    }
-}
-
-// ADMIN
+// admin nav
 function openAdmin(){
-    document.getElementById("startScreen").style.display="none";
-    document.getElementById("adminLogin").style.display="block";
+    startScreen.style.display="none";
+    adminLogin.style.display="block";
 }
-
 function checkAdmin(){
-    let pass=document.getElementById("adminPass").value;
-    if(pass==="tylor"){
-        document.getElementById("adminLogin").style.display="none";
-        document.getElementById("adminPanel").style.display="block";
-        loadAdminBoard();
-    }else{
-        alert("Wrong password");
-    }
+    if(adminPass.value==="tylor"){
+        adminLogin.style.display="none";
+        adminPanel.style.display="block";
+        loadAdmin();
+    }else showPopup("Wrong password");
 }
-
-function addQuestion(){
-    let q=document.getElementById("qText").value;
-    let o1=document.getElementById("opt1").value;
-    let o2=document.getElementById("opt2").value;
-    let o3=document.getElementById("opt3").value;
-    let o4=document.getElementById("opt4").value;
-    let correct=document.getElementById("correctAns").value;
-
-    let questions=JSON.parse(localStorage.getItem("questions"))||[];
-
-    questions.push({
-        question:q,
-        answers:[o1,o2,o3,o4].filter(a=>a!==""),
-        correct:correct
-    });
-
-    localStorage.setItem("questions",JSON.stringify(questions));
-    alert("Question Added!");
-}
-
-function loadAdminBoard(){
-    let scores=JSON.parse(localStorage.getItem("scores"))||[];
-
-    let html="";
-    scores.forEach((s,i)=>{
-        html+=`${s.name} - ${s.score} <button onclick="deleteScore(${i})">❌</button><br>`;
-    });
-
-    document.getElementById("adminBoard").innerHTML=html;
-}
-
-function deleteScore(i){
-    let scores=JSON.parse(localStorage.getItem("scores"))||[];
-    scores.splice(i,1);
-    localStorage.setItem("scores",JSON.stringify(scores));
-    loadAdminBoard();
-}
-
-function clearLeaderboard(){
-    localStorage.removeItem("scores");
-    loadAdminBoard();
-}
-
 function goHome(){
-    document.getElementById("adminPanel").style.display="none";
-    document.getElementById("startScreen").style.display="block";
+    adminPanel.style.display="none";
+    startScreen.style.display="block";
 }
 
-// INIT
-setBg();
-showLeaderboard();
+// 🔥 LOAD BACKGROUND ON PAGE LOAD
+setRandomBackground();
 
 </script>
 
